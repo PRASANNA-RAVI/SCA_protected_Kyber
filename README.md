@@ -49,14 +49,10 @@ One can also use the ST-Link utility to burn the binary onto the STM32 discovery
 
 ## How to run the code:
 
-* Compile command:
+* **Compile command**: make
 
-make
+The binary to burn into the STM32 board will be available in the **bin** folder as **crypto_kem_kyber768_ref_test.bin**.
 
-The binary to burn into the STM32 board will be available in the bin folder as crypto_kem_kyber768_ref_test.bin.
-
-* Command to burn the binary into the STM32Discovery board:
-
-openocd -f interface/stlink-v2-1.cfg -f target/stm32f4x.cfg -c "program crypto_kem_kyber768_ref_test.bin 0x08000000 verify reset exit"
+* **Command to burn the binary into the STM32Discovery board**: openocd -f interface/stlink-v2-1.cfg -f target/stm32f4x.cfg -c "program crypto_kem_kyber768_ref_test.bin 0x08000000 verify reset exit"
 
 One can also use the openocd framework or also the ST-Link utility to download the binary onto the board.
