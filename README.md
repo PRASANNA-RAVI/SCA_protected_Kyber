@@ -10,10 +10,10 @@ The implemented countermeasures can also be ported to the second round submissio
 * The code for the SCA protected NTT and INTT are located in ntt.c. Each of the NTT and INTT
 operations are protected over four levels (four variants).
 
-Level-0 : Unproteted
-Level-1: Shuffled NTT
-Level-2: Randomized NTT
-Level-3: Shuffled-Randomized NTT
+- Level-0 : Unproteted
+- Level-1: Shuffled NTT
+- Level-2: Randomized NTT
+- Level-3: Shuffled-Randomized NTT
 
 * The protection level of each NTT operation can be independently controlled from the indcpa.c file.
 For example,
@@ -21,7 +21,6 @@ For example,
 ```c
 int polyvec_invntt(&bp, 3); // Line 307 in indcpa.c
 ```
-
 The inverse NTT structure over bp is implemented with level 3 protection level.
 
 ## Shuffling secret-sensitive operations in Kyber
@@ -37,7 +36,7 @@ polyvec_add(&bp, &bp, &ep, 0); // Unprotected
 
 ## Hardware Setup and Installation:
 
-The instructions to setup the STM32Discvovery board to run the pqm4 library is available in the link below:
+The instructions to setup the STM32Discvovery board to run the **pqm4** library is available in the link below:
 
 https://github.com/mupq/pqm4/tree/Round1
 
