@@ -13,14 +13,14 @@ This work mainly consists of the SCA protected implementation of the first round
 
 Our countermeasures employed over the NTT operation are mainly of two types. The first countermeasure involves randomizing the order of the butterfly operations within every stage of the NTT operation which we refer to as the Shuffled NTT. The second countermeasure involves performing multiplicative masking of the twiddle factors used in the NTT operation, which we refer to as the Randomized NTT. Masking the twiddle factors ensures that the intermediate values within the NTT operation are also masked, thus protecting the NTT from DPA style attacks. Moreover, we employ a cheap and low-entropy masking which involves multiplicative masking with powers of the twiddle factors whose products are already pre-computed. Thus, we save on the extra multiplication when computing the masked twiddle factor during every butterfly operation.
 
-* The code for the SCA protected NTT and INTT are located in crypto_kem/kyber768/ref/ntt.c . Each of the NTT and INTT operations are protected over four levels (four variants).
+* The code for the SCA protected NTT and INTT are located in **crypto_kem/kyber768/ref/ntt.c** . Each of the NTT and INTT operations are protected over four levels (four variants).
 
 - Level-0: Unprotected
 - Level-1: Shuffled NTT
 - Level-2: Randomized NTT
 - Level-3: Shuffled-Randomized NTT
 
-* The protection level of each NTT operation can be independently controlled from the indcpa.c file.
+* The protection level of each NTT operation can be independently controlled from the **indcpa.c** file.
 For example,
 
 ```c
@@ -31,7 +31,7 @@ The inverse NTT structure over bp is implemented with level 3 protection level.
 ## Shuffling secret-sensitive operations in Kyber
 
 We also implement the shuffling countermeasure for some sensitive operations in kyber. The sensitive operations
-can be independently controllable to be either protected (1) or unprotected (0) in indcpa.c.
+can be independently controllable to be either protected (1) or unprotected (0) in **indcpa.c**.
 For example,
 
 ```c
