@@ -11,6 +11,8 @@ This work mainly consists of the SCA protected implementation of the first round
 
 ## SCA-protected NTT implementation
 
+Our countermeasures employed over the NTT operation are mainly of two types. The first countermeasure involves randomizing the order of the butterfly operations within every stage of the NTT operation which we refer to as the Shuffled NTT. The second countermeasure involves performing multiplicative masking of the twiddle factors used in the NTT operation, which we refer to as the Randomized NTT. Masking the twiddle factors ensures that the intermediate values within the NTT operation are also masked, thus protecting the NTT from DPA style attacks. Moreover, we employ a cheap and low-entropy masking which involves multiplicative masking with powers of the twiddle factors whose products are already pre-computed. Thus, we save on the extra multiplication when computing the masked twiddle factor during every butterfly operation.
+
 * The code for the SCA protected NTT and INTT are located in crypto_kem/kyber768/ref/ntt.c . Each of the NTT and INTT operations are protected over four levels (four variants).
 
 - Level-0: Unprotected
