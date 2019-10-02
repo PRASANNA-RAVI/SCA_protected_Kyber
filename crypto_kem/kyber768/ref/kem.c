@@ -24,6 +24,8 @@ int crypto_kem_keypair(unsigned char *pk, unsigned char *sk)
     sk[i+KYBER_INDCPA_SECRETKEYBYTES] = pk[i];
   sha3_256(sk+KYBER_SECRETKEYBYTES-2*KYBER_SYMBYTES,pk,KYBER_PUBLICKEYBYTES);
   randombytes(sk+KYBER_SECRETKEYBYTES-KYBER_SYMBYTES,KYBER_SYMBYTES);         /* Value z for pseudo-random output on reject */
+  // for(i=0;i<KYBER_SYMBYTES;i++)
+  //   sk[KYBER_SECRETKEYBYTES-KYBER_SYMBYTES+i] = 0xAA;
   return 0;
 }
 
@@ -42,9 +44,10 @@ int crypto_kem_keypair(unsigned char *pk, unsigned char *sk)
 int crypto_kem_enc(unsigned char *ct, unsigned char *ss, const unsigned char *pk)
 {
   unsigned char  kr[2*KYBER_SYMBYTES];                                        /* Will contain key, coins */
-  unsigned char buf[2*KYBER_SYMBYTES];                          
-
+  unsigned char buf[2*KYBER_SYMBYTES];
   randombytes(buf, KYBER_SYMBYTES);
+  // for(i=0;i<KYBER_SYMBYTES;i++)
+  //  buf[i] = 0xAA;
   sha3_256(buf,buf,KYBER_SYMBYTES);                                           /* Don't release system RNG output */
 
   sha3_256(buf+KYBER_SYMBYTES, pk, KYBER_PUBLICKEYBYTES);                     /* Multitarget countermeasure for coins + contributory KEM */
@@ -73,7 +76,7 @@ int crypto_kem_enc(unsigned char *ct, unsigned char *ss, const unsigned char *pk
 **************************************************/
 int crypto_kem_dec(unsigned char *ss, const unsigned char *ct, const unsigned char *sk)
 {
-  size_t i; 
+  size_t i;
   int fail;
   unsigned char cmp[KYBER_CIPHERTEXTBYTES];
   unsigned char buf[2*KYBER_SYMBYTES];
@@ -81,7 +84,7 @@ int crypto_kem_dec(unsigned char *ss, const unsigned char *ct, const unsigned ch
   const unsigned char *pk = sk+KYBER_INDCPA_SECRETKEYBYTES;
 
   indcpa_dec(buf, ct, sk);
-                                                                              
+
   for(i=0;i<KYBER_SYMBYTES;i++)                                               /* Multitarget countermeasure for coins + contributory KEM */
     buf[KYBER_SYMBYTES+i] = sk[KYBER_SECRETKEYBYTES-2*KYBER_SYMBYTES+i];      /* Save hash by storing H(pk) in sk */
   sha3_512(kr, buf, 2*KYBER_SYMBYTES);

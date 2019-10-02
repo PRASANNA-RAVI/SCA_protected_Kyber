@@ -9,7 +9,8 @@ const struct rcc_clock_scale benchmarkclock = {
     .hpre = RCC_CFGR_HPRE_DIV_NONE,
     .ppre1 = RCC_CFGR_PPRE_DIV_2,
     .ppre2 = RCC_CFGR_PPRE_DIV_NONE,
-    .flash_config = FLASH_ACR_DCEN | FLASH_ACR_ICEN | FLASH_ACR_LATENCY_0WS,
+    //.flash_config = FLASH_ACR_DCEN | FLASH_ACR_ICEN | FLASH_ACR_LATENCY_0WS,
+    .flash_config = FLASH_ACR_LATENCY_0WS,
     .apb1_frequency = 12000000,
     .apb2_frequency = 24000000,
 };
@@ -38,6 +39,7 @@ void clock_setup(const enum clock_mode clock)
 void gpio_setup(void)
 {
     gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO2 | GPIO3);
+    gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO7|GPIO1);
     gpio_set_af(GPIOA, GPIO_AF7, GPIO2 | GPIO3);
 }
 
@@ -142,7 +144,7 @@ void send_USART_str(const char* in)
     for(i = 0; in[i] != 0; i++) {
         usart_send_blocking(USART2, *(unsigned char *)(in+i));
     }
-    usart_send_blocking(USART2, '\n');
+    // usart_send_blocking(USART2, '\n');
 }
 
 void send_USART_bytes(const unsigned char* in, int n)

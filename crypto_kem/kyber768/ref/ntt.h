@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-void ntt(uint16_t* poly);
-void invntt(uint16_t* poly);
+void ntt(uint16_t* poly, int protection_level);
+void invntt(uint16_t* poly, int protection_level);
 
 #endif

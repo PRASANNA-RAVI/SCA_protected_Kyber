@@ -28,8 +28,15 @@ def doTest(binary):
 
     print("Flashing {}..".format(binpath))
 
-    subprocess.run(["st-flash", "write", binpath, "0x8000000"],
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # subprocess.run(["st-flash", "write", binpath, "0x8000000"],
+    #                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    # subprocess.run(["openocd", "-f", "interface/stlink-v2.cfg", "-f", "target/stm32f4x.cfg -c",
+    #                 "\"program ", binpath, "0x8000000", "verify", "reset", "exit\""],
+    #                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    str = "program " + binpath + " 0x08000000 verify reset exit"
+    subprocess.run(["openocd", "-f", "interface/stlink-v2-1.cfg", "-f", "target/stm32f4x.cfg", "-c", str])
 
     print("Flashed, now running tests...")
 
@@ -40,6 +47,8 @@ def doTest(binary):
     #  and expects a hashtag '#' after the test vector output.
     while True:
         x = dev.read()
+        #print(state)
+        #print(x)
         if x == b'' and state == 'waiting':
             print("timed out while waiting for the markers")
             doTest(binary)

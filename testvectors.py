@@ -6,7 +6,7 @@ import subprocess
 import hashlib
 from utils import m4ignore
 
-dev = serial.Serial("/dev/ttyUSB0", 115200)
+dev = serial.Serial("/dev/tty.usbmodem1423", 115200)
 
 try:
     binaries = [x for x in os.listdir('bin') if 'testvectors.bin' in x]

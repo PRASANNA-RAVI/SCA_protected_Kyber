@@ -5,6 +5,12 @@
 #define KYBER_K 3 /* Change this for different security strengths */
 #endif
 
+#define PRINT_NTT 1
+#define PRINT_INTT 0
+// #define MASKED 0
+// #define SHUFFLED 0
+// #define UNPROTECTED 0
+// #define MASKED_AND_SHUFFLED 1
 /* Don't change parameters below this line */
 
 #define KYBER_N 256
@@ -22,10 +28,10 @@
 
 #define KYBER_SYMBYTES 32   /* size in bytes of shared key, hashes, and seeds */
 
-#define KYBER_POLYBYTES              416 
-#define KYBER_POLYCOMPRESSEDBYTES    96 
-#define KYBER_POLYVECBYTES           (KYBER_K * KYBER_POLYBYTES)   
-#define KYBER_POLYVECCOMPRESSEDBYTES (KYBER_K * 352) 
+#define KYBER_POLYBYTES              416
+#define KYBER_POLYCOMPRESSEDBYTES    96
+#define KYBER_POLYVECBYTES           (KYBER_K * KYBER_POLYBYTES)
+#define KYBER_POLYVECCOMPRESSEDBYTES (KYBER_K * 352)
 
 #define KYBER_INDCPA_MSGBYTES       KYBER_SYMBYTES
 #define KYBER_INDCPA_PUBLICKEYBYTES (KYBER_POLYVECCOMPRESSEDBYTES + KYBER_SYMBYTES)

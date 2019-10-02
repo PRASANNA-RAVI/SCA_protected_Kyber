@@ -9,4 +9,6 @@ uint16_t montgomery_reduce(uint32_t a);
 
 uint16_t barrett_reduce(uint16_t a);
 
+// uint8_t barrett_reduce_any_number(uint8_t a, uint8_t n);
+
 #endif

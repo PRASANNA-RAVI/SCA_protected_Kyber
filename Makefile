@@ -18,17 +18,17 @@ RANDOMBYTES = obj/randombytes.o
 CFLAGS     += -O3 \
               -Wall -Wextra -Wimplicit-function-declaration \
               -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes \
-              -Wundef -Wshadow \
+              -Wundef -Wshadow -g \
               -I$(OPENCM3DIR)/include \
               -fno-common $(ARCH_FLAGS) -MD $(DEFINES)
-LDFLAGS    += --static -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group \
+LDFLAGS    += --static -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group --verbose\
               -T$(LDSCRIPT) -nostartfiles -Wl,--gc-sections \
                $(ARCH_FLAGS) -L$(OPENCM3DIR)/lib
 
 CC_HOST    = gcc
 LD_HOST    = gcc
 
-CFLAGS_HOST = -O3 -Wall -Wextra -Wpedantic
+CFLAGS_HOST = -O3 -Wall -Wextra -Wpedantic -g
 LDFLAGS_HOST =
 
 OBJS_HOST  = obj-host/fips202.o obj-host/keccakf1600.o
@@ -63,7 +63,8 @@ OWNDIR=$(shell pwd)
 INCPATH=$(OWNDIR)/common
 
 
-all: tests testvectors speeds stack
+# all: tests testvectors speeds stack
+all: tests stack
 
 libs: $(KEMLIBS_M4) $(SIGNLIBS_M4) $(KEMLIBS_REF) $(SIGNLIBS_REF)
 tests: libs $(KEMTESTS) $(SIGNTESTS)
@@ -71,6 +72,9 @@ testvectors: libs $(KEMTESTVECTORS) $(SIGNTESTVECTORS) $(KEMTESTVECTORS_HOST) $(
 speeds: libs $(KEMSPEEDS) $(SIGNSPEEDS)
 stack: libs $(KEMSTACK) $(SIGNSTACK)
 
+# all: libs
+#
+# libs: $(KEMLIBS_M4) $(SIGNLIBS_M4) $(KEMLIBS_REF) $(SIGNLIBS_REF)
 
 .PHONY: force
 export INCPATH
@@ -81,20 +85,25 @@ export INCPATH
 # Currently the workaround is to `make clean` after modifying schemes.
 
 $(KEMLIBS_M4): force
+	@echo "Entering KEMLIBS_M4..."
 	make -C $@ libpqm4.a
 
 $(SIGNLIBS_M4): force
+	@echo "Entering SIGNLIBS_M4..."
 	make -C $@ libpqm4.a
 
 $(KEMLIBS_REF): force
+	@echo "Entering KEMLIBS_REF..."
 	make -C $@ libpqm4.a
 	make -C $@ libpqhost.a
 
 $(SIGNLIBS_REF): force
+	@echo "Entering SIGNLIBS_REF..."
 	make -C $@ libpqm4.a
 	make -C $@ libpqhost.a
 
 bin-host/crypto_kem_%:  $(OBJS_HOST) obj-host/$(patsubst %,crypto_kem_%.o,%)
+	@echo "Entering bin-host/crypto_kem_%..."
 	mkdir -p bin-host
 	$(LD_HOST) -o $@ \
 	$(patsubst bin-host/%,obj-host/%.o,$@) \
@@ -102,6 +111,7 @@ bin-host/crypto_kem_%:  $(OBJS_HOST) obj-host/$(patsubst %,crypto_kem_%.o,%)
 	$(OBJS_HOST) $(LDFLAGS_HOST) -lm
 
 bin-host/crypto_sign_%:  $(OBJS_HOST) obj-host/$(patsubst %,crypto_sign_%.o,%)
+	@echo "Entering bin-host/crypto_sign_%..."
 	mkdir -p bin-host
 	$(LD_HOST) -o $@ \
 	$(patsubst bin-host/%,obj-host/%.o,$@) \
@@ -109,12 +119,15 @@ bin-host/crypto_sign_%:  $(OBJS_HOST) obj-host/$(patsubst %,crypto_sign_%.o,%)
 	$(OBJS_HOST) $(LDFLAGS_HOST) -lm
 
 bin/%.bin: elf/%.elf
+	@echo "Entering bin/%.bin..."
 	mkdir -p bin
 	$(OBJCOPY) -Obinary $^ $@
+	cp elf/* bin
 
 
 
 elf/crypto_kem_%_test.elf: $(OBJS) $(RANDOMBYTES) $(LDSCRIPT) obj/$(patsubst %,crypto_kem_%_test.o,%) $(OPENCM3FILE)
+	@echo "Entering elf/crypto_kem_%_test.elf..."
 	mkdir -p elf
 	$(LD) -o $@ \
 	$(patsubst elf/%.elf,obj/%.o,$@) \
@@ -123,6 +136,7 @@ elf/crypto_kem_%_test.elf: $(OBJS) $(RANDOMBYTES) $(LDSCRIPT) obj/$(patsubst %,c
 
 
 elf/crypto_sign_%_test.elf: $(OBJS) $(RANDOMBYTES) $(LDSCRIPT) obj/$(patsubst %,crypto_sign_%_test.o,%) $(OPENCM3FILE)
+	@echo "Entering elf/crypto_sign_%_test.elf..."
 	mkdir -p elf
 	$(LD) -o $@ \
 	$(patsubst elf/%.elf,obj/%.o,$@) \
@@ -131,6 +145,7 @@ elf/crypto_sign_%_test.elf: $(OBJS) $(RANDOMBYTES) $(LDSCRIPT) obj/$(patsubst %,
 
 
 elf/crypto_kem_%_testvectors.elf: $(OBJS) $(LDSCRIPT) obj/$(patsubst %,crypto_kem_%_testvectors.o,%) $(OPENCM3FILE)
+	@echo "Entering elf/crypto_sign_%_test.elf..."
 	mkdir -p elf
 	$(LD) -o $@ \
 	$(patsubst elf/%.elf,obj/%.o,$@) \
@@ -138,6 +153,7 @@ elf/crypto_kem_%_testvectors.elf: $(OBJS) $(LDSCRIPT) obj/$(patsubst %,crypto_ke
 	$(OBJS) $(LDFLAGS) -l$(OPENCM3NAME) -lm
 
 elf/crypto_sign_%_testvectors.elf: $(OBJS) $(LDSCRIPT) obj/$(patsubst %,crypto_sign_%_testvectors.o,%) $(OPENCM3FILE)
+	@echo "Entering elf/crypto_sign_%_testvectors.elf..."
 	mkdir -p elf
 	$(LD) -o $@ \
 	$(patsubst elf/%.elf,obj/%.o,$@) \
@@ -146,6 +162,7 @@ elf/crypto_sign_%_testvectors.elf: $(OBJS) $(LDSCRIPT) obj/$(patsubst %,crypto_s
 
 
 elf/crypto_kem_%_speed.elf: $(OBJS) $(LDSCRIPT) obj/$(patsubst %,crypto_kem_%_speed.o,%) $(OPENCM3FILE)
+	@echo "Entering elf/crypto_kem_%_speed.elf..."
 	mkdir -p elf
 	$(LD) -o $@ \
 	$(patsubst elf/%.elf,obj/%.o,$@) \
@@ -153,6 +170,7 @@ elf/crypto_kem_%_speed.elf: $(OBJS) $(LDSCRIPT) obj/$(patsubst %,crypto_kem_%_sp
 	$(OBJS) $(RANDOMBYTES) $(LDFLAGS) -l$(OPENCM3NAME) -lm
 
 elf/crypto_sign_%_speed.elf: $(OBJS) $(LDSCRIPT) obj/$(patsubst %,crypto_sign_%_speed.o,%) $(OPENCM3FILE)
+	@echo "Entering elf/crypto_sign_%_speed.elf..."
 	mkdir -p elf
 	$(LD) -o $@ \
 	$(patsubst elf/%.elf,obj/%.o,$@) \
@@ -160,6 +178,7 @@ elf/crypto_sign_%_speed.elf: $(OBJS) $(LDSCRIPT) obj/$(patsubst %,crypto_sign_%_
 	$(OBJS) $(RANDOMBYTES) $(LDFLAGS) -l$(OPENCM3NAME) -lm
 
 elf/crypto_kem_%_stack.elf: $(OBJS) $(LDSCRIPT) $(RANDOMBYTES) obj/$(patsubst %,crypto_kem_%_stack.o,%) $(OPENCM3FILE)
+	@echo "Entering elf/crypto_kem_%_stack.elf..."
 	mkdir -p elf
 	$(LD) -o $@ \
 	$(patsubst elf/%.elf,obj/%.o,$@) \
@@ -167,6 +186,7 @@ elf/crypto_kem_%_stack.elf: $(OBJS) $(LDSCRIPT) $(RANDOMBYTES) obj/$(patsubst %,
 	$(OBJS) $(RANDOMBYTES) $(LDFLAGS) -l$(OPENCM3NAME) -lm
 
 elf/crypto_sign_%_stack.elf: $(OBJS) $(LDSCRIPT) $(RANDOMBYTES) obj/$(patsubst %,crypto_sign_%_stack.o,%) $(OPENCM3FILE)
+	@echo "Entering elf/crypto_sign_%_stack.elf..."
 	mkdir -p elf
 	$(LD) -o $@ \
 	$(patsubst elf/%.elf,obj/%.o,$@) \
@@ -175,37 +195,43 @@ elf/crypto_sign_%_stack.elf: $(OBJS) $(LDSCRIPT) $(RANDOMBYTES) obj/$(patsubst %
 
 
 obj/crypto_kem_%_test.o: crypto_kem/test.c $(patsubst %,%/api.h,$(patsubst %,crypto_kem/%,$(subst _,/,$%)))
-	mkdir -p obj 
+	@echo "Entering obj/crypto_kem_%_test.o..."
+	mkdir -p obj
 	$(CC) $(CFLAGS) -o $@ -c $< \
 	-I$(patsubst %test.o,%,$(patsubst obj/%,%,$(subst crypto/kem,crypto_kem,$(subst _,/,$@)))) \
 	-I./common/
 
 obj/crypto_sign_%_test.o: crypto_sign/test.c $(patsubst %,%/api.h,$(patsubst %,crypto_sign/%,$(subst _,/,$%)))
-	mkdir -p obj 
+	@echo "Entering obj/crypto_sign_%_test.o..."
+	mkdir -p obj
 	$(CC) $(CFLAGS) -o $@ -c $< \
 	-I$(patsubst %test.o,%,$(patsubst obj/%,%,$(subst crypto/sign,crypto_sign,$(subst _,/,$@)))) \
 	-I./common/
 
 
 obj/crypto_kem_%_testvectors.o: crypto_kem/testvectors.c $(patsubst %,%/api.h,$(patsubst %,crypto_kem/%,$(subst _,/,$%)))
-	mkdir -p obj 
+	@echo "Entering obj/crypto_kem_%_testvectors.o..."
+	mkdir -p obj
 	$(CC) $(CFLAGS) -o $@ -c $< \
 	-I$(patsubst %testvectors.o,%,$(patsubst obj/%,%,$(subst crypto/kem,crypto_kem,$(subst _,/,$@)))) \
 	-I./common/
 
 obj/crypto_sign_%_testvectors.o: crypto_sign/testvectors.c $(patsubst %,%/api.h,$(patsubst %,crypto_sign/%,$(subst _,/,$%)))
-	mkdir -p obj 
+	@echo "Entering obj/crypto_sign_%_testvectors.o..."
+	mkdir -p obj
 	$(CC) $(CFLAGS) -o $@ -c $< \
 	-I$(patsubst %testvectors.o,%,$(patsubst obj/%,%,$(subst crypto/sign,crypto_sign,$(subst _,/,$@)))) \
 	-I./common/
 
 obj-host/crypto_kem_%_testvectors.o: crypto_kem/testvectors-host.c $(patsubst %,%/api.h,$(patsubst %,crypto_kem/%,$(subst _,/,$%)))
+	@echo "Entering obj-host/crypto_kem_%_testvectors.o..."
 	mkdir -p obj-host
 	$(CC_HOST) $(CFLAGS_HOST) -o $@ -c $< \
 	-I$(patsubst %testvectors.o,%,$(patsubst obj-host/%,%,$(subst crypto/kem,crypto_kem,$(subst _,/,$@)))) \
 	-I./common/
 
 obj-host/crypto_sign_%_testvectors.o: crypto_sign/testvectors-host.c $(patsubst %,%/api.h,$(patsubst %,crypto_sign/%,$(subst _,/,$%)))
+	@echo "Entering obj-host/crypto_sign_%_testvectors.o..."
 	mkdir -p obj-host
 	$(CC_HOST) $(CFLAGS_HOST) -o $@ -c $< \
 	-I$(patsubst %testvectors.o,%,$(patsubst obj-host/%,%,$(subst crypto/sign,crypto_sign,$(subst _,/,$@)))) \
@@ -213,47 +239,56 @@ obj-host/crypto_sign_%_testvectors.o: crypto_sign/testvectors-host.c $(patsubst 
 
 
 obj/crypto_kem_%_speed.o: crypto_kem/speed.c $(patsubst %,%/api.h,$(patsubst %,crypto_kem/%,$(subst _,/,$%)))
-	mkdir -p obj 
+	@echo "Entering obj/crypto_kem_%_speed.o..."
+	mkdir -p obj
 	$(CC) $(CFLAGS) -o $@ -c $< \
 	-I$(patsubst %speed.o,%,$(patsubst obj/%,%,$(subst crypto/kem,crypto_kem,$(subst _,/,$@)))) \
 	-I./common/
 
 obj/crypto_sign_%_speed.o: crypto_sign/speed.c $(patsubst %,%/api.h,$(patsubst %,crypto_sign/%,$(subst _,/,$%)))
-	mkdir -p obj 
+	@echo "Entering obj/crypto_sign_%_speed.o..."
+	mkdir -p obj
 	$(CC) $(CFLAGS) -o $@ -c $< \
 	-I$(patsubst %speed.o,%,$(patsubst obj/%,%,$(subst crypto/sign,crypto_sign,$(subst _,/,$@)))) \
 	-I./common/
 
 obj/crypto_kem_%_stack.o: crypto_kem/stack.c $(patsubst %,%/api.h,$(patsubst %,crypto_kem/%,$(subst _,/,$%)))
-	mkdir -p obj 
+	@echo "Entering obj/crypto_kem_%_stack.o..."
+	mkdir -p obj
 	$(CC) $(CFLAGS) -o $@ -c $< \
 	-I$(patsubst %stack.o,%,$(patsubst obj/%,%,$(subst crypto/kem,crypto_kem,$(subst _,/,$@)))) \
 	-I./common/
 
 obj/crypto_sign_%_stack.o: crypto_sign/stack.c $(patsubst %,%/api.h,$(patsubst %,crypto_sign/%,$(subst _,/,$%)))
-	mkdir -p obj 
+	@echo "Entering obj/crypto_sign_%_stack.o..."
+	mkdir -p obj
 	$(CC) $(CFLAGS) -o $@ -c $< \
 	-I$(patsubst %stack.o,%,$(patsubst obj/%,%,$(subst crypto/sign,crypto_sign,$(subst _,/,$@)))) \
 	-I./common/
 
 
 obj/randombytes.o: common/randombytes.c
-	mkdir -p obj 
+	@echo "Entering obj/randombytes.o..."
+	mkdir -p obj
 	$(CC) $(CFLAGS) -o $@ -c $^
 
 obj/stm32f4_wrapper.o:  common/stm32f4_wrapper.c
-	mkdir -p obj 
+	@echo "Entering obj/stm32f4_wrapper.o..."
+	mkdir -p obj
 	$(CC) $(CFLAGS) -o $@ -c $^
 
 obj/fips202.o:  common/fips202.c
-	mkdir -p obj 
+	@echo "Entering obj/fips202.o..."
+	mkdir -p obj
 	$(CC) $(CFLAGS) -o $@ -c $^
 
 obj/keccakf1600.o:  common/keccakf1600.S
+	@echo "Entering obj/keccakf1600.o..."
 	mkdir -p obj
 	$(CC) $(CFLAGS) -o $@ -c $^
 
 obj-host/%.o: common/%.c
+	@echo "Entering obj-host/%.o..."
 	mkdir -p obj-host
 	$(CC_HOST) $(CFLAGS_HOST) -o $@ -c $^
 
@@ -268,13 +303,18 @@ $(OPENCM3FILE):
 		printf "######## ERROR ########\n"; \
 		exit 1; \
 		fi
+	@echo "Entering $(OPENCM3FILE)..."
 	make -C $(OPENCM3DIR)
 
 
+.SECONDARY: elf/%.elf
+
+.PRECIOUS: elf/%.elf
 
 .PHONY: clean libclean
 
 clean:
+	@echo "Entering clean..."
 	find . -name \*.o -type f -exec rm -f {} \;
 	find . -name \*.d -type f -exec rm -f {} \;
 	find crypto_kem -name \*.a -type f -exec rm -f {} \;
@@ -288,4 +328,6 @@ clean:
 	rm -rf benchmarks/
 
 libclean:
+	@echo "Entering libclean..."
 	make -C $(OPENCM3DIR) clean
+	make -C $(OPENCM3DIR)

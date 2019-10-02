@@ -5,12 +5,28 @@
 #include "randombytes.h"
 #include "fips202.h"
 #include "ntt.h"
+#include "stm32wrapper.h"
+
+static unsigned long long overflowcnt = 0;
+unsigned int t0, t1;
+
+// static void sys_tick_handler(void)
+// {
+//   ++overflowcnt;
+// }
+
+static void printcycles(const char *s, unsigned long long c)
+{
+  char outs[32];
+  snprintf(outs,sizeof(outs),"%llu\n",c);
+  send_USART_str(outs);
+}
 
 /*************************************************
 * Name:        pack_pk
-* 
+*
 * Description: Serialize the public key as concatenation of the
-*              compressed and serialized vector of polynomials pk 
+*              compressed and serialized vector of polynomials pk
 *              and the public seed used to generate the matrix A.
 *
 * Arguments:   unsigned char *r:          pointer to the output serialized public key
@@ -27,7 +43,7 @@ static void pack_pk(unsigned char *r, const polyvec *pk, const unsigned char *se
 
 /*************************************************
 * Name:        unpack_pk
-* 
+*
 * Description: De-serialize and decompress public key from a byte array;
 *              approximate inverse of pack_pk
 *
@@ -46,7 +62,7 @@ static void unpack_pk(polyvec *pk, unsigned char *seed, const unsigned char *pac
 
 /*************************************************
 * Name:        pack_ciphertext
-* 
+*
 * Description: Serialize the ciphertext as concatenation of the
 *              compressed and serialized vector of polynomials b
 *              and the compressed and serialized polynomial v
@@ -63,7 +79,7 @@ static void pack_ciphertext(unsigned char *r, const polyvec *b, const poly *v)
 
 /*************************************************
 * Name:        unpack_ciphertext
-* 
+*
 * Description: De-serialize and decompress ciphertext from a byte array;
 *              approximate inverse of pack_ciphertext
 *
@@ -79,7 +95,7 @@ static void unpack_ciphertext(polyvec *b, poly *v, const unsigned char *c)
 
 /*************************************************
 * Name:        pack_sk
-* 
+*
 * Description: Serialize the secret key
 *
 * Arguments:   - unsigned char *r:  pointer to output serialized secret key
@@ -92,7 +108,7 @@ static void pack_sk(unsigned char *r, const polyvec *sk)
 
 /*************************************************
 * Name:        unpack_sk
-* 
+*
 * Description: De-serialize the secret key;
 *              inverse of pack_sk
 *
@@ -109,10 +125,10 @@ static void unpack_sk(polyvec *sk, const unsigned char *packedsk)
 
 /*************************************************
 * Name:        gen_matrix
-* 
+*
 * Description: Deterministically generate matrix A (or the transpose of A)
 *              from a seed. Entries of the matrix are polynomials that look
-*              uniformly random. Performs rejection sampling on output of 
+*              uniformly random. Performs rejection sampling on output of
 *              SHAKE-128
 *
 * Arguments:   - polyvec *a:                pointer to ouptput matrix A
@@ -138,7 +154,7 @@ void gen_matrix(polyvec *a, const unsigned char *seed, int transposed) // Not st
     for(j=0;j<KYBER_K;j++)
     {
       ctr = pos = 0;
-      if(transposed) 
+      if(transposed)
       {
         extseed[KYBER_SYMBYTES]   = i;
         extseed[KYBER_SYMBYTES+1] = j;
@@ -148,7 +164,7 @@ void gen_matrix(polyvec *a, const unsigned char *seed, int transposed) // Not st
         extseed[KYBER_SYMBYTES]   = j;
         extseed[KYBER_SYMBYTES+1] = i;
       }
-        
+
       shake128_absorb(state,extseed,KYBER_SYMBYTES+2);
       shake128_squeezeblocks(buf,nblocks,state);
 
@@ -175,42 +191,57 @@ void gen_matrix(polyvec *a, const unsigned char *seed, int transposed) // Not st
 
 /*************************************************
 * Name:        indcpa_keypair
-* 
-* Description: Generates public and private key for the CPA-secure 
+*
+* Description: Generates public and private key for the CPA-secure
 *              public-key encryption scheme underlying Kyber
 *
 * Arguments:   - unsigned char *pk: pointer to output public key (of length KYBER_INDCPA_PUBLICKEYBYTES bytes)
 *              - unsigned char *sk: pointer to output private key (of length KYBER_INDCPA_SECRETKEYBYTES bytes)
 **************************************************/
-void indcpa_keypair(unsigned char *pk, 
+void indcpa_keypair(unsigned char *pk,
                    unsigned char *sk)
 {
   polyvec a[KYBER_K], e, pkpv, skpv;
-  unsigned char buf[KYBER_SYMBYTES+KYBER_SYMBYTES];
+  unsigned char buf[KYBER_SYMBYTES+KYBER_SYMBYTES+KYBER_SYMBYTES];
   unsigned char *publicseed = buf;
   unsigned char *noiseseed = buf+KYBER_SYMBYTES;
+  unsigned char *noiseseed2 = buf+2*KYBER_SYMBYTES;
   int i;
   unsigned char nonce=0;
 
   randombytes(buf, KYBER_SYMBYTES);
+
   sha3_512(buf, buf, KYBER_SYMBYTES);
+
+  // Add one more function
+  sha3_512(buf+2*KYBER_SYMBYTES, buf+KYBER_SYMBYTES, KYBER_SYMBYTES);
 
   gen_a(a, publicseed);
 
   for(i=0;i<KYBER_K;i++)
     poly_getnoise(skpv.vec+i,noiseseed,nonce++);
 
-  polyvec_ntt(&skpv);
-  
-  for(i=0;i<KYBER_K;i++)
-    poly_getnoise(e.vec+i,noiseseed,nonce++);
+    // send_USART_str("noiseseed\n");
+    // send_USART_bytes(noiseseed,KYBER_SYMBYTES);
+    // send_USART_str("\n");
 
+  for(i=0;i<KYBER_K;i++)
+    poly_getnoise(e.vec+i,noiseseed2,nonce++);
+
+    // send_USART_str("noiseseed2\n");
+    // send_USART_bytes(noiseseed2,KYBER_SYMBYTES);
+    // send_USART_str("\n");
+
+  // send_USART_str("skpv in keygen\n");
+  polyvec_ntt(&skpv, 3); //To be Protected...
+  // // For testing
   // matrix-vector multiplication
   for(i=0;i<KYBER_K;i++)
     polyvec_pointwise_acc(&pkpv.vec[i],&skpv,a+i);
 
-  polyvec_invntt(&pkpv);
-  polyvec_add(&pkpv,&pkpv,&e);
+  polyvec_invntt(&pkpv, 3); //To be Protected...
+  // // For testing
+  polyvec_add(&pkpv,&pkpv,&e, 1);
 
   pack_sk(sk, &skpv);
   pack_pk(pk, &pkpv, publicseed);
@@ -219,8 +250,8 @@ void indcpa_keypair(unsigned char *pk,
 
 /*************************************************
 * Name:        indcpa_enc
-* 
-* Description: Encryption function of the CPA-secure 
+*
+* Description: Encryption function of the CPA-secure
 *              public-key encryption scheme underlying Kyber.
 *
 * Arguments:   - unsigned char *c:          pointer to output ciphertext (of length KYBER_INDCPA_BYTES bytes)
@@ -243,16 +274,28 @@ void indcpa_enc(unsigned char *c,
 
   unpack_pk(&pkpv, seed, pk);
 
-  poly_frommsg(&k, m);
+  // t0 = systick_get_value();
+  // overflowcnt = 0;
+  poly_frommsg(&k, m, 0);
+  // t1 = systick_get_value();
+  // printcycles("", (t0+overflowcnt*2400000llu)-t1);
 
-  polyvec_ntt(&pkpv);
+  // t0 = systick_get_value();
+  // overflowcnt = 0;
+  // poly_frommsg(&k, m, 1);
+  // t1 = systick_get_value();
+  // printcycles("", (t0+overflowcnt*2400000llu)-t1);
+
+  // send_USART_str("pkpv in enc\n");
+  polyvec_ntt(&pkpv, 3);
 
   gen_at(at, seed);
 
   for(i=0;i<KYBER_K;i++)
     poly_getnoise(sp.vec+i,coins,nonce++);
 
-  polyvec_ntt(&sp);
+  // send_USART_str("sp in enc\n");
+  polyvec_ntt(&sp, 3); //To be Protected...
 
   for(i=0;i<KYBER_K;i++)
     poly_getnoise(ep.vec+i,coins,nonce++);
@@ -261,24 +304,24 @@ void indcpa_enc(unsigned char *c,
   for(i=0;i<KYBER_K;i++)
     polyvec_pointwise_acc(&bp.vec[i],&sp,at+i);
 
-  polyvec_invntt(&bp);
-  polyvec_add(&bp, &bp, &ep);
- 
+  polyvec_invntt(&bp, 3); //To be Protected...
+  polyvec_add(&bp, &bp, &ep, 1);
+
   polyvec_pointwise_acc(&v, &pkpv, &sp);
-  poly_invntt(&v);
+  poly_invntt(&v, 3); //To be Protected...
 
   poly_getnoise(&epp,coins,nonce++);
 
-  poly_add(&v, &v, &epp);
-  poly_add(&v, &v, &k);
+  poly_add(&v, &v, &epp, 1);
+  poly_add(&v, &v, &k, 1);
 
   pack_ciphertext(c, &bp, &v);
 }
 
 /*************************************************
 * Name:        indcpa_dec
-* 
-* Description: Decryption function of the CPA-secure 
+*
+* Description: Decryption function of the CPA-secure
 *              public-key encryption scheme underlying Kyber.
 *
 * Arguments:   - unsigned char *m:        pointer to output decrypted message (of length KYBER_INDCPA_MSGBYTES)
@@ -295,12 +338,28 @@ void indcpa_dec(unsigned char *m,
   unpack_ciphertext(&bp, &v, c);
   unpack_sk(&skpv, sk);
 
-  polyvec_ntt(&bp);
+  // gpio_set(GPIOA, GPIO7);
+  // send_USART_str("bp in dec\n");
+  polyvec_ntt(&bp, 3);
+  // gpio_clear(GPIOA, GPIO7);
 
   polyvec_pointwise_acc(&mp,&skpv,&bp);
-  poly_invntt(&mp);
+  poly_invntt(&mp, 3); //To be Protected...
 
-  poly_sub(&mp, &mp, &v);
 
-  poly_tomsg(m, &mp);
+  poly_sub(&mp, &mp, &v, 0);
+  // t1 = systick_get_value();
+  // printcycles("", (t0+overflowcnt*2400000llu)-t1);
+
+  // t0 = systick_get_value();
+  // overflowcnt = 0;
+  poly_tomsg(m, &mp, 0); // Protected...
+  // t1 = systick_get_value();
+  // printcycles("", (t0+overflowcnt*2400000llu)-t1);
+
+  // t0 = systick_get_value();
+  // overflowcnt = 0;
+  // poly_tomsg(m, &mp, 1); // Protected...
+  // t1 = systick_get_value();
+  // printcycles("", (t0+overflowcnt*2400000llu)-t1);
 }
