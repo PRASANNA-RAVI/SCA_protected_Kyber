@@ -2,18 +2,18 @@
 
 Kyber is a lattice-based Key-Exchange scheme which is currently a candidate in the NIST standardization process for Post-Quantum Cryptography. It heavily utilizes the Number Theoretic Transform (NTT) operation for polynomial multiplication. The NTT transform is very susceptible to side-channel attacks as shown by Pessl et al. in very recent works that have demonstrated single trace template style attacks over the Number Theoretic Transform. In this work, we attempt to protect the NTT operation by employing novel shuffling and masking countermeasures and implement it as part of the Kyber Key-Exchange scheme.
 
+The countermeasures are incorporated over the first round implementation of Kyber
+as present in the **pqm4** libary, which is an opensource benchmarking and testing framework for PQC schemes on the ARM Cortex-M4 microcontroller. More details about the **pqm4** library can be found in the link below:
 
-We implement The implementation of the SCA resistant Kyber is present in the crypto_kem folder. This can be viewed as a fork of the **pqm4** library, which is the opensource benchmarking and testing framework for PQC schemes on the ARM Cortex-M4 microcontroller.
+https://github.com/mupq/pqm4/tree/Round1
 
-This is the SCA protected implementation of the first round submission of the Kyber key exchange scheme.
-The implemented countermeasures can also be ported to the second round submission of Kyber and this work is under progress.
+This work mainly consists of the SCA protected implementation of the first round submission of the Kyber key exchange scheme. The implemented countermeasures can also be ported to the second round submission of Kyber and this work is under progress.
 
 ## SCA-protected NTT implementation
 
-* The code for the SCA protected NTT and INTT are located in crypto_kem/kyber768/ntt.c . Each of the NTT and INTT
-operations are protected over four levels (four variants).
+* The code for the SCA protected NTT and INTT are located in crypto_kem/kyber768/ref/ntt.c . Each of the NTT and INTT operations are protected over four levels (four variants).
 
-- Level-0 : Unproteted
+- Level-0: Unprotected
 - Level-1: Shuffled NTT
 - Level-2: Randomized NTT
 - Level-3: Shuffled-Randomized NTT
